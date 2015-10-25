@@ -26,6 +26,13 @@ namespace GoFindIt
 		GoogleMap map = null;
 		Location lastKnownLocation = null;
 
+		/// <summary>
+		/// Keeps track of whether the real app has started
+		/// </summary>
+		bool ready = false;
+
+		Random r = new Random();
+
 		protected override void OnCreate (Bundle bundle)
 		{
 			base.OnCreate (bundle);
@@ -46,7 +53,7 @@ namespace GoFindIt
 			if (locMgr.IsProviderEnabled (provider))
 			{
 				// grab GPS loc every 5000ms for 1+ meter changes, alert this class' ILocationListener
-				locMgr.RequestLocationUpdates (provider, 5000, 1, this);
+				locMgr.RequestLocationUpdates (provider, 3000, 1, this);
 			}
 			else
 			{
@@ -77,16 +84,8 @@ namespace GoFindIt
 			Log.Debug ("location", location.Latitude + ", " + location.Longitude);
 			lastKnownLocation = location;
 
-			var builder = CameraPosition.InvokeBuilder ();
-			builder.Target (new LatLng (lastKnownLocation.Latitude, lastKnownLocation.Longitude));
-			builder.Zoom (18);
-			builder.Bearing (155);
-			builder.Tilt (65);
-			var camPos = builder.Build ();
-			var camUpdate = CameraUpdateFactory.NewCameraPosition (camPos);
-
-			if (map!=null)
-				map.MoveCamera (camUpdate);
+			if (lastKnownLocation != null && !ready)
+				ReadyForLocationMap ();
 		}
 		/* End ILocationListener interfaces */
 			
@@ -98,7 +97,47 @@ namespace GoFindIt
 		{
 			Log.Info ("Map", "ready");
 			this.map = map;
+			if (lastKnownLocation != null && !ready)
+				ReadyForLocationMap ();
 		}
+
+		private void ReadyForLocationMap()
+		{
+			ready = true;
+
+			ZoomToCurrentLocation ();
+
+			// current position marker
+			var currentPosMkrOpts = new MarkerOptions();
+			currentPosMkrOpts.SetPosition (new LatLng (lastKnownLocation.Latitude, lastKnownLocation.Longitude));
+			currentPosMkrOpts.SetTitle ("Current Position");
+			currentPosMkrOpts.SetIcon (BitmapDescriptorFactory.DefaultMarker (BitmapDescriptorFactory.HueCyan));
+			map.AddMarker (currentPosMkrOpts);
+
+
+			// next goal marker
+			var mkrOptions = new MarkerOptions ();
+			var latlngOffset = 0.0006;
+			mkrOptions.SetPosition (new LatLng (lastKnownLocation.Latitude - latlngOffset + r.NextDouble () * 2*latlngOffset, 
+				lastKnownLocation.Longitude - latlngOffset + r.NextDouble () *2*latlngOffset));
+			mkrOptions.SetTitle ("Next Goal");
+			map.AddMarker (mkrOptions);
+		}
+
+		private void ZoomToCurrentLocation()
+		{
+			var builder = CameraPosition.InvokeBuilder ();
+			builder.Target (new LatLng (lastKnownLocation.Latitude, lastKnownLocation.Longitude));
+			builder.Zoom (18);
+			builder.Bearing (155);
+			builder.Tilt (65);
+			var camPos = builder.Build ();
+			var camUpdate = CameraUpdateFactory.NewCameraPosition (camPos);
+
+			if (map!=null)
+				map.MoveCamera (camUpdate);
+		}
+			
 	}
 }
 

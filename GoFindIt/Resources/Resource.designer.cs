@@ -262,6 +262,9 @@ namespace GoFindIt
 			// aapt resource value: 0x7f070006
 			public const int adjust_width = 2131165190;
 			
+			// aapt resource value: 0x7f070009
+			public const int button1 = 2131165193;
+			
 			// aapt resource value: 0x7f070000
 			public const int hybrid = 2131165184;
 			
