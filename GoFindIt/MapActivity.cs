@@ -25,6 +25,8 @@ namespace GoFindIt
 		MapFragment mapFrag;
 		GoogleMap map = null;
 		Location lastKnownLocation = null;
+		LatLng startingLocation = null;
+		LatLng goalLocation = null;
 
 		/// <summary>
 		/// Keeps track of whether the real app has started
@@ -86,6 +88,20 @@ namespace GoFindIt
 
 			if (lastKnownLocation != null && !ready)
 				ReadyForLocationMap ();
+
+			float[] distance = new float[3];
+			Location.DistanceBetween (goalLocation.Latitude, goalLocation.Longitude, location.Latitude, location.Longitude, distance);
+
+			if (distance [0] < 2)
+			{
+				Log.Debug ("goal", "goal reached");
+
+				GenerateNewGoalLocation ();
+
+			}
+
+			ZoomToCurrentLocation ();
+
 		}
 		/* End ILocationListener interfaces */
 			
@@ -106,6 +122,9 @@ namespace GoFindIt
 			ready = true;
 
 			ZoomToCurrentLocation ();
+		
+
+			startingLocation = new LatLng (lastKnownLocation.Latitude, lastKnownLocation.Longitude);
 
 			// current position marker
 			var currentPosMkrOpts = new MarkerOptions();
@@ -116,10 +135,17 @@ namespace GoFindIt
 
 
 			// next goal marker
+			GenerateNewGoalLocation();
+		}
+
+		private void GenerateNewGoalLocation()
+		{
+			// next goal marker
 			var mkrOptions = new MarkerOptions ();
 			var latlngOffset = 0.0006;
-			mkrOptions.SetPosition (new LatLng (lastKnownLocation.Latitude - latlngOffset + r.NextDouble () * 2*latlngOffset, 
-				lastKnownLocation.Longitude - latlngOffset + r.NextDouble () *2*latlngOffset));
+			goalLocation = new LatLng (lastKnownLocation.Latitude - latlngOffset + r.NextDouble () * 2 * latlngOffset, 
+				lastKnownLocation.Longitude - latlngOffset + r.NextDouble () * 2 * latlngOffset);
+			mkrOptions.SetPosition (goalLocation);
 			mkrOptions.SetTitle ("Next Goal");
 			map.AddMarker (mkrOptions);
 		}
